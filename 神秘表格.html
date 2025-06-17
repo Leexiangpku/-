@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京大学钴源剂量率实时计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #1a2a6c, #20408e);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .info-bar {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table-container {
+            width: 100%; /* 容器宽度 */
+            max-height: 600px; /* 设置最大高度 */
+            overflow-x: auto; /* 横向滚动 */
+            overflow-y: auto; /* 纵向滚动 */
+            border: 1px solid #ccc; /* 边框样式 */
+        }
+        
+        table {
+            width: 100%; /* 表格宽度 */
+            border-collapse: collapse; /* 去掉单元格间隙 */
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd; /* 单元格边框 */
+        }
+        
+        thead {
+            position: sticky; /* 固定表头 */
+            top: 0;
+            background-color: #f9f9f9; /* 表头背景色 */
+            z-index: 1;
+        }
+
+        .info-item {
+            margin: 5px 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-item strong {
+            color: #1a237e;
+            margin-right: 5px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-title {
+            font-size: 1.6rem;
+            color: #1a237e;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.95rem;
+        }
+        
+        th {
+            background-color: #1a237e;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e8f4fd;
+        }
+        
+        .dose-value {
+            font-weight: bold;
+            color: #1a237e;
+        }
+        
+        .original-value {
+            font-size: 0.85rem;
+            color: #777;
+            display: block;
+            margin-top: 3px;
+        }
+        
+        .notes {
+            font-size: 0.95rem;
+            color: #555;
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #f0f8ff;
+            border-left: 4px solid #1a237e;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px 0;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .info-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            table {
+                font-size: 0.85rem;
+            }
+            
+            th, td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>北京大学钴源剂量率实时计算器</h1>
+        <div class="subtitle">基于钴-60衰变规律的实时剂量率计算（半衰期：5.2714年）</div>
+    </header>
+    
+    <div class="info-bar">
+        <div class="info-item"><strong>当前时间：</strong> <span id="current-time">正在计算...</span></div>
+        <div class="info-item"><strong>参考时间：</strong> 2024年12月2日</div>
+        <div class="info-item"><strong>衰变因子：</strong> <span id="decay-factor">正在计算...</span></div>
+    </div>
+    
+    <div class="table-container">
+        <table id="west-channel-table">
+            <thead>
+                <tr>
+                    <th rowspan="3"> </th> <!-- 行号列 -->
+                    <th colspan="11">A北</th> <!-- 合并 1-11 列 -->
+                    <th colspan="11">A中</th> <!-- 合并 12-22 列 -->
+                    <th colspan="11">A南</th> <!-- 合并 23-33 列 -->
+                </tr>
+                
+            </thead>
+            <tbody>
+                <!-- 表格数据行动态生成 -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">特殊孔道剂量率 (Gy/h)</h2>
+        <div class="table-container">
+            <table id="special-channel-table">
+                <!-- JavaScript will populate this table -->
+            </table>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">东孔道剂量率 (Gy/h)</h2>
+        <div class="table-container">
+            <table id="east-channel-table">
+                <!-- JavaScript will populate this table -->
+            </table>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">香豆素孔道剂量率 (Gy/h)</h2>
+        <div class="table-container">
+            <table id="coumarin-channel-table">
+                <!-- JavaScript will populate this table -->
+            </table>
+        </div>
+    </div>
+    
+    <div class="notes">
+        <p><strong>计算说明：</strong> 所有剂量率值根据钴-60的衰变规律计算得出，公式为：当前剂量率 = 原始剂量率 × e<sup>-λt</sup>，其中 λ = ln(2)/半衰期，t 为从参考时间至今的时间（年）。钴-60半衰期取5.2714年。</p>
+    </div>
+    
+    <footer>
+        <p>北京大学钴源剂量率监测系统 &copy; 2024</p>
+    </footer>
+
+    <script>
+        // 钴源原始数据
+        const originalData = {
+            westChannel: {
+                headers: [ "", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11",, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+                subHeaders: ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+                rows: [
+                    [ 306.44, 294.68, 275.75, 268.07, null, null, null, null, null, null, null, 282.91, 284.95, 278.82, 267.56, null, null, null, null, null, null, null, 257.84, 254.77, 278.30, 274.21, null, null, null, null, null, null, null],
+                    [ 192.36, 200.54, 199.01, 189.80, 183.15, null, null, null, null, null, null, 190.82, 190.82, 191.85, 188.78, 184.17, null, null, null, null, null, null, 170.87, 187.24, 189.29, 191.33, 175.47, null, null, null, null, null, null],
+                    [ 133.38, 144.71, 138.86, 139.96, 137.03, 133.38, null, null, null, null, null, 139.96, 138.86, 139.59, 137.03, 131.55, 132.65, null, null, null, null, null, 125.70, 133.74, 135.21, 134.11, 137.40, 128.63, null, null, null, null, null],
+                    [ 101.29, 105.39, 105.39, 102.83, 106.92, 100.78, 100.78, null, null, null, null, 103.60, 106.67, 105.90, 107.18, 102.57, 100.53, 100.53, null, null, null, null, 98.48, 96.95, 100.53, 100.78, 102.06, 102.57, 95.67, null, null, null, null],
+                    [ 75.37, 79.81, 78.78, 77.25, 77.08, 77.25, 76.06, 75.72, null, null, null, 78.27, 77.25, 79.13, 78.61, 76.91, 76.91, 77.76, 75.03, null, null, null, 73.16, 71.45, 75.37, 75.20, 75.89, 75.72, 75.37, 71.28, null, null, null],
+                    [ 61.01, 62.67, 63.56, 63.82, 62.03, 63.18, 61.39, 60.88, 58.32, null, null, 62.41, 61.39, 63.31, 64.59, 63.05, 62.80, 62.03, 62.03, 59.47, null, null, 58.96, 58.45, 60.62, 59.60, 60.62, 60.11, 61.01, 61.26, 58.45, null, null],
+                    [ 50.65, 52.39, 52.49, 52.59, 51.77, 52.28, 50.95, 50.54, 51.47, 49.42, null, 51.67, 51.57, 52.49, 52.90, 52.90, 51.47, 51.77, 52.18, 51.26, 48.50, null, 50.85, 50.85, 49.21, 49.52, 50.65, 50.54, 50.75, 50.34, 49.52, 46.96, null],
+                    [ 41.52, 44.76, 43.31, 42.89, 43.40, 42.29, 43.40, 41.78, 42.29, 43.31, 41.18, 42.80, 43.06, 43.40, 44.00, 44.42, 43.91, 43.40, 43.06, 43.14, 42.72, 41.44, 41.10, 41.78, 40.59, 41.61, 42.55, 42.55, 42.63, 41.27, 41.95, 42.38, 39.05]
+                ]
+            },
+            specialChannel: {
+                headers: ["位置", "南角", "北角", "中西北", "中西南", "中东北", "中东南"],
+                rows: [
+                    ["剂量率", 270.12, 274.72, 789.79, 769.75, 600.32, 613.98]
+                ]
+            },
+            eastChannel: {
+                headers: ["","21", "20", "19", "18", "17", "16", "15", "14", "13", "12", "11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1"],
+                rows: [
+                    [11.33, null, 13.76, null, 15.98, null, 18.08, null, 21.64, null, 25.49, null, 31.60, null, 43.78, null, 53.61, 63.56, 84.02, 83.13, 97.71],
+                    [null, 11.61, null, 13.90, null, 17.14, null, 21.30, null, 25.24, null, 29.37, null, 36.91, null, 51.67, null, 65.87, 90.12, 93.58, 109.74],
+                    [10.51, null, 12.59, null, 14.63, null, 17.22, null, 22.39, null, 27.67, null, 32.91, null, 45.68, null, 62.11, 72.26, 98.38, 104.66, 125.60],
+                    [null, 12.07, null, 14.07, null, 16.63, null, 20.50, null, 24.94, null, 30.44, null, 39.32, null, 52.27, null, 72.77, 101.14, 104.45, 129.43],
+                    [11.69, null, 14.13, null, 16.16, null, 18.76, null, 23.65, null, 29.25, null, 36.44, null, 51.23, null, 65.07, 76.10, 108.42, 120.86, 158.08],
+                    [null, 12.30, null, 14.98, null, 17.33, null, 22.44, null, 26.60, null, 32.43, null, 41.66, null, 61.82, null, 85.44, 117.67, 123.85, 158.34],
+                    [11.36, null, 13.78, null, 15.86, null, 18.69, null, 23.69, null, 29.49, null, 36.32, null, 52.04, null, 69.37, 81.21, 112.55, 122.99, 158.34],
+                    [null, 12.61, null, 14.86, null, 17.75, null, 22.22, null, 27.37, null, 33.36, null, 42.02, null, 59.60, null, 81.73, 116.29, 125.34, 164.48],
+                    [11.87, null, 14.04, null, 16.46, null, 19.13, null, 24.12, null, 28.84, null, 35.13, null, 48.82, null, 67.02, 78.53, 110.58, 114.25, 148.87],
+                    [null, 12.87, null, 15.01, null, 17.52, null, 21.30, null, 25.37, null, 29.72, null, 38.52, null, 57.89, null, 75.20, 103.70, 109.78, 136.59],
+                    [11.31, null, 13.13, null, 14.87, null, 17.22, null, 20.74, null, 25.90, null, 32.80, null, 45.46, null, 58.01, 68.42, 95.04, 99.12, 125.85],
+                    [null, 11.41, null, 12.85, null, 15.09, null, 19.33, null, 24.43, null, 30.39, null, 37.64, null, 51.93, null, 67.27, 90.12, 91.66, 111.01],
+                    [10.03, null, 12.36, null, 14.47, null, 17.29, null, 22.27, null, 27.63, null, 32.12, null, 43.49, null, 52.80, 61.65, 84.22, 84.41, 95.67]
+                ]
+            },
+            coumarinChannel: {
+                headers: ["", "1", "2", "3", "4", "5", "6", "7", "8"],
+                rows: [
+                    [ 3.70, 3.65, 3.62, 3.71, 3.82, 3.91, 3.84, 3.71],
+                    [ 3.47, 3.27, 3.23, 3.27, 3.37, 3.43, 3.60, 3.23],
+                    [ 3.06, 3.20, 2.86, 2.86, 3.11, 3.02, 3.05, 2.92]
+                ]
+            }
+        };
+
+        // 物理常数
+        const HALF_LIFE = 5.2714; // 钴-60半衰期（年）
+        const REFERENCE_DATE = new Date('2024-12-02T00:00:00'); // 参考日期
+        
+        // 计算衰变因子
+        function calculateDecayFactor() {
+            const now = new Date();
+            const timeDiff = (now - REFERENCE_DATE) / (1000 * 60 * 60 * 24 * 365.25); // 年为单位
+            const decayConstant = Math.log(2) / HALF_LIFE;
+            return Math.exp(-decayConstant * timeDiff);
+        }
+        
+        // 更新页面时间和衰变因子
+        function updateDateTimeAndDecayFactor() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const decayFactor = calculateDecayFactor();
+            document.getElementById('decay-factor').textContent = decayFactor.toFixed(6);
+            
+            // 每秒更新一次时间
+            setTimeout(updateDateTimeAndDecayFactor, 1000);
+        }
+        
+        // 计算当前剂量率
+        function calculateCurrentDoseRate(originalValue) {
+            if (originalValue === null) return null;
+            const decayFactor = calculateDecayFactor();
+            return originalValue * decayFactor;
+        }
+        
+        // 创建表格
+        function createTable(tableId, data) {
+            const table = document.getElementById(tableId);
+            
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            data.headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // 创建数据行
+            const tbody = document.createElement('tbody');
+            
+            data.rows.forEach((rowData, rowIndex) => {
+                const row = document.createElement('tr');
+                
+                // 添加行号到第一列
+                const rowNumberCell = document.createElement('td');
+                rowNumberCell.textContent = rowIndex + 1; // 行号从 1 开始
+                rowNumberCell.className = 'row-number'; // 可选：添加样式类以区分行号
+                row.appendChild(rowNumberCell);
+
+                rowData.forEach((cellData, index) => {
+                    const td = document.createElement('td');
+                    
+                    // 判断是否是西孔道的第一列
+                    
+                    
+                    if (cellData === null) {
+                        td.textContent = "-";
+                    } else {
+                        const currentDose = calculateCurrentDoseRate(cellData);
+                        
+                        if (!isNaN(currentDose)) {
+                            const doseValue = document.createElement('span');
+                            doseValue.className = 'dose-value';
+                            doseValue.textContent = currentDose.toFixed(2);
+                            
+                            td.appendChild(doseValue);
+                        } else {
+                            // 处理非数值单元格
+                            td.textContent = cellData;
+                        }
+                    }
+                    
+                    row.appendChild(td);
+                });
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+        }
+        
+        // 特殊孔道表格创建
+        function createSpecialTable() {
+            const table = document.getElementById('special-channel-table');
+            const data = originalData.specialChannel;
+            
+            // 表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            data.headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // 数据行
+            const tbody = document.createElement('tbody');
+            const rowData = data.rows[0];
+            
+            const row = document.createElement('tr');
+            
+            rowData.forEach((cellData, index) => {
+                const td = document.createElement('td');
+                
+                if (index === 0) {
+                    // 第一列是标题
+                    td.textContent = cellData;
+                } else {
+                    const currentDose = calculateCurrentDoseRate(cellData);
+                    
+                    const doseValue = document.createElement('span');
+                    doseValue.className = 'dose-value';
+                    doseValue.textContent = currentDose.toFixed(2);
+                    
+                    
+                    td.appendChild(doseValue);
+                }
+                
+                row.appendChild(td);
+            });
+            
+            tbody.appendChild(row);
+            table.appendChild(tbody);
+        }
+        
+        // 初始化页面
+        function initPage() {
+            // 更新时间
+            updateDateTimeAndDecayFactor();
+            
+            // 创建表格
+            createTable('west-channel-table', originalData.westChannel);
+            createSpecialTable();
+            createTable('east-channel-table', originalData.eastChannel);
+            createTable('coumarin-channel-table', originalData.coumarinChannel);
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', initPage);
+    
+
+    const tableBody = document.querySelector('#west-channel-table tbody');
+data.rows.forEach((rowData, rowIndex) => {
+    const row = document.createElement('tr');
+    
+    // 添加行号
+    const rowNumberCell = document.createElement('td');
+    rowNumberCell.textContent = rowIndex + 1;
+    rowNumberCell.className = 'row-number';
+    row.appendChild(rowNumberCell);
+    
+    // 添加数据单元格
+    rowData.forEach(cellData => {
+        const td = document.createElement('td');
+        td.textContent = cellData === null ? '-' : cellData;
+        row.appendChild(td);
+    });
+    
+    tableBody.appendChild(row);
+});
+    </script>
+</body>
+</html>
